@@ -33,7 +33,7 @@ function App() {
         <div style={{ marginBottom: '10px' }}>
           <h1 style={{ margin: '0 0 5px 0', fontSize: '24px', textAlign: 'center' }}>AG Grid Enterprise Demo</h1>
           <p style={{ margin: '0 0 10px 0', color: '#666', fontSize: '13px', textAlign: 'center' }}>
-            Featuring: Data display, Pagination, Column pinning, Auto-sizing, Filtering, Sorting, Quick search, and 25k row limit
+            Featuring: Data display, Pagination, Row Grouping, Aggregation, Column pinning, Auto-sizing, Filtering, Sorting, Quick search, and 25k row limit
           </p>
 
           <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>

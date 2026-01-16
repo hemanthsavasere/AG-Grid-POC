@@ -34,21 +34,63 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
     return data;
   }, [data]);
 
-  // Column definitions with all features enabled
+  // Column definitions with row grouping and aggregation support on ALL columns
   const columnDefs = useMemo<ColDef[]>(() => {
     if (data.length === 0) return [];
 
     // Dynamically create column definitions from the first row
     const firstRow = data[0];
-    return Object.keys(firstRow).map(key => ({
-      field: key,
-      headerName: key.charAt(0).toUpperCase() + key.slice(1),
-      sortable: true,
-      filter: 'agTextColumnFilter', // Text filter for each column
-      floatingFilter: true, // Enable floating filter for string search per column
-      resizable: true,
-      enablePivot: true,
-    }));
+    return Object.keys(firstRow).map(key => {
+      const baseColDef: ColDef = {
+        field: key,
+        headerName: key.charAt(0).toUpperCase() + key.slice(1),
+        sortable: true,
+        floatingFilter: true,
+        resizable: true,
+        enableRowGroup: true, // Enable grouping on ALL columns
+      };
+
+      // Configure salary column with aggregation and currency formatting
+      if (key === 'salary') {
+        return {
+          ...baseColDef,
+          enableValue: true,
+          aggFunc: 'avg',
+          filter: 'agNumberColumnFilter',
+          valueFormatter: (params: any) => {
+            if (params.value == null) return '';
+            return '$' + params.value.toLocaleString('en-US', {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+            });
+          },
+        };
+      }
+
+      // Configure ID column with count aggregation
+      if (key === 'id') {
+        return {
+          ...baseColDef,
+          enableValue: true,
+          aggFunc: 'count',
+          filter: 'agNumberColumnFilter',
+        };
+      }
+
+      // Use number filter for numeric columns
+      if (key === 'id' || key === 'salary') {
+        return {
+          ...baseColDef,
+          filter: 'agNumberColumnFilter',
+        };
+      }
+
+      // Default configuration with text filter
+      return {
+        ...baseColDef,
+        filter: 'agTextColumnFilter',
+      };
+    });
   }, [data]);
 
   // Default column properties
@@ -59,21 +101,24 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
     filter: true, // Enable filtering on all columns
     resizable: true,
     enablePivot: true,
+    enableRowGroup: true, // Enable grouping on all columns
+    enableValue: true, // Enable aggregation on all columns
   }), []);
 
-  // Auto-size all columns to fit content
-  const autoSizeAll = useCallback(() => {
-    const allColumnIds = gridRef.current?.api
-      .getColumns()
-      ?.map(column => column.getId()) || [];
-
-    gridRef.current?.api.autoSizeColumns(allColumnIds);
-  }, []);
+  // Auto group column definition for displaying grouped rows
+  const autoGroupColumnDef = useMemo<ColDef>(() => ({
+    headerName: 'Group',
+    minWidth: 250,
+    cellRendererParams: {
+      suppressCount: false, // Show count in group headers
+    },
+    filter: 'agTextColumnFilter',
+    floatingFilter: true,
+  }), []);
 
   // Handle grid ready event
   const onGridReady = useCallback((params: GridReadyEvent) => {
     // Columns will auto-fill the width due to flex: 1 in defaultColDef
-    // Users can manually click "Auto-size All Columns" button if needed
   }, []);
 
   // Handle quick filter input (search across all columns)
@@ -81,6 +126,13 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
     const value = event.target.value;
     setQuickFilterText(value);
     gridRef.current?.api.setGridOption('quickFilterText', value);
+  }, []);
+
+  // Clear all grouping
+  const clearGrouping = useCallback(() => {
+    gridRef.current?.api.applyColumnState({
+      defaultState: { rowGroup: false },
+    });
   }, []);
 
   const containerStyle = useMemo(() => ({
@@ -114,6 +166,35 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
         </div>
       )}
 
+      {/* Toolbar above grid - Grouping controls */}
+      <div style={{
+        padding: '6px 10px',
+        backgroundColor: '#f8f9fa',
+        borderBottom: '1px solid #ddd',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        gap: '10px'
+      }}>
+        <button
+          onClick={clearGrouping}
+          style={{
+            padding: '6px 14px',
+            fontSize: '13px',
+            backgroundColor: '#6c757d',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#5a6268'}
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#6c757d'}
+        >
+          Clear Grouping
+        </button>
+      </div>
+
       {/* Main grid container */}
       <div style={gridStyle} className="ag-theme-quartz">
         <AgGridReact
@@ -121,6 +202,7 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
           rowData={rowData}
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
+          autoGroupColumnDef={autoGroupColumnDef}
           pagination={true} // Feature 2: Pagination when data exceeds grid height
           paginationAutoPageSize={true} // Auto-calculate page size based on grid height
           onGridReady={onGridReady}
@@ -129,17 +211,23 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
           animateRows={true}
           // Feature 9: Quick filter searches across all columns
           quickFilterText={quickFilterText}
+          // Row grouping configuration
+          rowGroupPanelShow="always" // Show drag panel for grouping
+          groupDefaultExpanded={0} // All groups collapsed initially
+          suppressAggFuncInHeader={false} // Show aggregation labels
+          groupDisplayType="singleColumn" // Single column for groups
         />
       </div>
 
-      {/* Bottom search bar - Feature 8 & 9 */}
+      {/* Bottom toolbar - Search bar and action buttons */}
       <div style={{
         padding: '10px',
         backgroundColor: '#f5f5f5',
         borderTop: '1px solid #ddd',
         display: 'flex',
         alignItems: 'center',
-        gap: '10px'
+        gap: '10px',
+        flexWrap: 'wrap'
       }}>
         <label htmlFor="quick-filter" style={{ fontWeight: 'bold', fontSize: '14px' }}>
           Search:
@@ -152,6 +240,7 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
           onChange={onQuickFilterChanged}
           style={{
             flex: 1,
+            minWidth: '200px',
             padding: '8px 12px',
             fontSize: '14px',
             border: '1px solid #ccc',
@@ -159,23 +248,6 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
             outline: 'none'
           }}
         />
-        <button
-          onClick={autoSizeAll}
-          style={{
-            padding: '8px 16px',
-            fontSize: '14px',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            whiteSpace: 'nowrap'
-          }}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#0056b3'}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#007bff'}
-        >
-          Auto-size All Columns
-        </button>
       </div>
     </div>
   );
