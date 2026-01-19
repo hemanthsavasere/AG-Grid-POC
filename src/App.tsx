@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import DataGrid from './DataGrid';
-import { smallDataset, mediumDataset, largeDataset, tooLargeDataset } from './sampleData';
+import { smallDataset, mediumDataset, largeDataset, tooLargeDataset, treeDataset } from './sampleData';
 import './App.css';
 
 function App() {
-  const [selectedDataset, setSelectedDataset] = useState<'small' | 'medium' | 'large' | 'tooLarge'>('medium');
+  const [selectedDataset, setSelectedDataset] = useState<'small' | 'medium' | 'large' | 'tooLarge' | 'tree'>('medium');
 
   const datasets = {
     small: smallDataset,
     medium: mediumDataset,
     large: largeDataset,
     tooLarge: tooLargeDataset,
+    tree: treeDataset,
   };
 
   const currentData = datasets[selectedDataset];
@@ -89,11 +90,29 @@ function App() {
             >
               Too Large (30,000 rows - Error)
             </button>
+            <button
+              onClick={() => setSelectedDataset('tree')}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: selectedDataset === 'tree' ? '#28a745' : '#e0e0e0',
+                color: selectedDataset === 'tree' ? 'white' : 'black',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Tree Data
+            </button>
           </div>
         </div>
 
         <div style={{ flex: 1, minHeight: 0, width: '100%', overflow: 'hidden' }}>
-          <DataGrid data={currentData} />
+          <DataGrid
+            data={currentData}
+            treeData={selectedDataset === 'tree'}
+            treePathField="path"
+            treeGroupColumnName="Organization"
+          />
         </div>
       </div>
     </div>

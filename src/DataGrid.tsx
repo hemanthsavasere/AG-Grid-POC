@@ -13,6 +13,10 @@ ModuleRegistry.registerModules([AllEnterpriseModule]);
 
 interface DataGridProps {
   data: any[];
+  // Tree data configuration
+  treeData?: boolean;                  // Enable tree data mode
+  treePathField?: string;              // Field containing path array (default: 'path')
+  treeGroupColumnName?: string;        // Group column header (default: 'Group')
 }
 
 const MAX_ROWS = 25000;
@@ -47,10 +51,19 @@ const detectColumnType = (data: any[], field: string): 'number' | 'boolean' | 'd
   return 'text';
 };
 
-const DataGrid: React.FC<DataGridProps> = ({ data }) => {
+const DataGrid: React.FC<DataGridProps> = ({
+  data,
+  treeData,
+  treePathField,
+  treeGroupColumnName
+}) => {
   const gridRef = useRef<AgGridReact>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [quickFilterText, setQuickFilterText] = useState<string>('');
+
+  // Mode detection - simple boolean check
+  const isTreeMode = treeData === true;
+  const pathField = treePathField || 'path';
 
   // Check if data exceeds max rows
   const rowData = useMemo(() => {
@@ -71,18 +84,20 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
 
     // Dynamically create column definitions from the first row
     const firstRow = data[0];
-    return Object.keys(firstRow).map(key => {
-      const columnType = detectColumnType(data, key);
+    return Object.keys(firstRow)
+      .filter(key => key !== pathField) // Exclude path field in tree mode
+      .map(key => {
+        const columnType = detectColumnType(data, key);
 
-      const baseColDef: ColDef = {
-        field: key,
-        headerName: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim(),
-        sortable: true,
-        floatingFilter: true,
-        resizable: true,
-        enableRowGroup: true,
-        enableValue: true,
-      };
+        const baseColDef: ColDef = {
+          field: key,
+          headerName: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim(),
+          sortable: true,
+          floatingFilter: true,
+          resizable: true,
+          enableRowGroup: !isTreeMode, // Disable row grouping in tree mode
+          enableValue: true,
+        };
 
       // Configure based on detected type
       switch (columnType) {
@@ -128,7 +143,7 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
           };
       }
     });
-  }, [data]);
+  }, [data, isTreeMode, pathField]);
 
   // Default column properties
   const defaultColDef = useMemo<ColDef>(() => ({
@@ -154,7 +169,7 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
   }), []);
 
   // Handle grid ready event
-  const onGridReady = useCallback((params: GridReadyEvent) => {
+  const onGridReady = useCallback((_params: GridReadyEvent) => {
     // Columns will auto-fill the width due to flex: 1 in defaultColDef
   }, []);
 
@@ -172,6 +187,16 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
     });
   }, []);
 
+  // Expand all tree nodes
+  const expandAll = useCallback(() => {
+    gridRef.current?.api.expandAll();
+  }, []);
+
+  // Collapse all tree nodes
+  const collapseAll = useCallback(() => {
+    gridRef.current?.api.collapseAll();
+  }, []);
+
   return (
     <div className="data-grid-container">
       {/* Error message display - Feature 7 */}
@@ -181,14 +206,31 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
         </div>
       )}
 
-      {/* Toolbar above grid - Grouping controls */}
+      {/* Toolbar above grid - Grouping controls or tree controls */}
       <div className="data-grid-toolbar">
-        <button
-          onClick={clearGrouping}
-          className="data-grid-clear-button"
-        >
-          Clear Grouping
-        </button>
+        {!isTreeMode ? (
+          <button
+            onClick={clearGrouping}
+            className="data-grid-clear-button"
+          >
+            Clear Grouping
+          </button>
+        ) : (
+          <>
+            <button
+              onClick={expandAll}
+              className="data-grid-expand-button"
+            >
+              Expand All
+            </button>
+            <button
+              onClick={collapseAll}
+              className="data-grid-collapse-button"
+            >
+              Collapse All
+            </button>
+          </>
+        )}
       </div>
 
       {/* Main grid container */}
@@ -198,7 +240,17 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
           rowData={rowData}
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
-          autoGroupColumnDef={autoGroupColumnDef}
+          autoGroupColumnDef={
+            isTreeMode
+              ? {
+                  headerName: treeGroupColumnName || 'Group',
+                  minWidth: 250,
+                  cellRendererParams: { suppressCount: true },
+                  filter: 'agTextColumnFilter',
+                  floatingFilter: true,
+                }
+              : autoGroupColumnDef
+          }
           pagination={true} // Feature 2: Pagination when data exceeds grid height
           paginationAutoPageSize={true} // Auto-calculate page size based on grid height
           onGridReady={onGridReady}
@@ -207,11 +259,21 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
           animateRows={true}
           // Feature 9: Quick filter searches across all columns
           quickFilterText={quickFilterText}
-          // Row grouping configuration
-          rowGroupPanelShow="always" // Show drag panel for grouping
-          groupDefaultExpanded={0} // All groups collapsed initially
-          suppressAggFuncInHeader={false} // Show aggregation labels
-          groupDisplayType="singleColumn" // Single column for groups
+          // Conditional configuration based on mode
+          {...(isTreeMode
+            ? {
+                // Tree data mode
+                treeData: true,
+                getDataPath: (data: any) => data[pathField],
+                groupDefaultExpanded: 1, // First level expanded by default
+              }
+            : {
+                // Flat data mode with row grouping
+                rowGroupPanelShow: 'always' as const,
+                groupDefaultExpanded: 0,
+                suppressAggFuncInHeader: false,
+                groupDisplayType: 'singleColumn' as const,
+              })}
         />
       </div>
 

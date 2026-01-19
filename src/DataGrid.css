@@ -40,6 +40,31 @@
   background-color: #5a6268;
 }
 
+.data-grid-expand-button,
+.data-grid-collapse-button {
+  padding: 6px 14px;
+  font-size: 13px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.data-grid-expand-button:hover,
+.data-grid-collapse-button:hover {
+  background-color: #218838;
+}
+
+.data-grid-collapse-button {
+  background-color: #ffc107;
+}
+
+.data-grid-collapse-button:hover {
+  background-color: #e0a800;
+}
+
 .data-grid-wrapper {
   width: 100%;
   flex: 1;

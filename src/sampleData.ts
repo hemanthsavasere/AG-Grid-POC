@@ -61,3 +61,29 @@ export const largeDataset = generateSampleData(10000);
 
 // For testing the 25k limit warning
 export const tooLargeDataset = generateSampleData(30000);
+
+// Tree data structure for hierarchical display
+export const treeDataset = [
+  { path: ['Employees'], name: 'Employees', count: 15, totalSalary: 750000 },
+  { path: ['Employees', 'Engineering'], name: 'Engineering', count: 8, totalSalary: 600000 },
+  { path: ['Employees', 'Engineering', 'Backend'], name: 'Backend', count: 5, totalSalary: 400000 },
+  { path: ['Employees', 'Engineering', 'Backend', 'John Doe'], name: 'John Doe', position: 'Senior Engineer', salary: 120000 },
+  { path: ['Employees', 'Engineering', 'Backend', 'Jane Smith'], name: 'Jane Smith', position: 'Engineer', salary: 95000 },
+  { path: ['Employees', 'Engineering', 'Backend', 'Mike Johnson'], name: 'Mike Johnson', position: 'Engineer', salary: 90000 },
+  { path: ['Employees', 'Engineering', 'Backend', 'Sarah Williams'], name: 'Sarah Williams', position: 'Junior Engineer', salary: 70000 },
+  { path: ['Employees', 'Engineering', 'Backend', 'Tom Brown'], name: 'Tom Brown', position: 'Junior Engineer', salary: 65000 },
+  { path: ['Employees', 'Engineering', 'Frontend'], name: 'Frontend', count: 3, totalSalary: 200000 },
+  { path: ['Employees', 'Engineering', 'Frontend', 'Alice Johnson'], name: 'Alice Johnson', position: 'Senior Engineer', salary: 115000 },
+  { path: ['Employees', 'Engineering', 'Frontend', 'David Lee'], name: 'David Lee', position: 'Engineer', salary: 85000 },
+  { path: ['Employees', 'Engineering', 'Frontend', 'Emma Davis'], name: 'Emma Davis', position: 'Junior Engineer', salary: 68000 },
+  { path: ['Employees', 'Sales'], name: 'Sales', count: 7, totalSalary: 450000 },
+  { path: ['Employees', 'Sales', 'North America'], name: 'North America', count: 4, totalSalary: 280000 },
+  { path: ['Employees', 'Sales', 'North America', 'Bob Wilson'], name: 'Bob Wilson', position: 'Sales Manager', salary: 95000 },
+  { path: ['Employees', 'Sales', 'North America', 'Carol Martinez'], name: 'Carol Martinez', position: 'Sales Rep', salary: 75000 },
+  { path: ['Employees', 'Sales', 'North America', 'Daniel Garcia'], name: 'Daniel Garcia', position: 'Sales Rep', salary: 65000 },
+  { path: ['Employees', 'Sales', 'North America', 'Emily Rodriguez'], name: 'Emily Rodriguez', position: 'Sales Rep', salary: 62000 },
+  { path: ['Employees', 'Sales', 'Europe'], name: 'Europe', count: 3, totalSalary: 170000 },
+  { path: ['Employees', 'Sales', 'Europe', 'Frank Anderson'], name: 'Frank Anderson', position: 'Sales Manager', salary: 88000 },
+  { path: ['Employees', 'Sales', 'Europe', 'Grace Taylor'], name: 'Grace Taylor', position: 'Sales Rep', salary: 58000 },
+  { path: ['Employees', 'Sales', 'Europe', 'Henry Thomas'], name: 'Henry Thomas', position: 'Sales Rep', salary: 55000 },
+];
