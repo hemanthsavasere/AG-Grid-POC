@@ -6,6 +6,7 @@ import {
   ModuleRegistry,
 } from 'ag-grid-community';
 import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import './DataGrid.css';
 
 // Register AG Grid Enterprise modules
 ModuleRegistry.registerModules([AllEnterpriseModule]);
@@ -135,68 +136,27 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
     });
   }, []);
 
-  const containerStyle = useMemo(() => ({
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column' as const
-  }), []);
-
-  const gridStyle = useMemo(() => ({
-    width: '100%',
-    flex: 1,
-    minHeight: 0, // Allow flex item to shrink below content size
-    overflow: 'hidden'
-  }), []);
-
   return (
-    <div style={containerStyle}>
+    <div className="data-grid-container">
       {/* Error message display - Feature 7 */}
       {errorMessage && (
-        <div style={{
-          padding: '10px',
-          backgroundColor: '#ff4444',
-          color: 'white',
-          marginBottom: '10px',
-          borderRadius: '4px',
-          fontWeight: 'bold',
-          textAlign: 'center'
-        }}>
+        <div className="data-grid-error">
           {errorMessage}
         </div>
       )}
 
       {/* Toolbar above grid - Grouping controls */}
-      <div style={{
-        padding: '6px 10px',
-        backgroundColor: '#f8f9fa',
-        borderBottom: '1px solid #ddd',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        gap: '10px'
-      }}>
+      <div className="data-grid-toolbar">
         <button
           onClick={clearGrouping}
-          style={{
-            padding: '6px 14px',
-            fontSize: '13px',
-            backgroundColor: '#6c757d',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            whiteSpace: 'nowrap'
-          }}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#5a6268'}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#6c757d'}
+          className="data-grid-clear-button"
         >
           Clear Grouping
         </button>
       </div>
 
       {/* Main grid container */}
-      <div style={gridStyle} className="ag-theme-quartz">
+      <div className="data-grid-wrapper ag-theme-quartz">
         <AgGridReact
           ref={gridRef}
           rowData={rowData}
@@ -220,16 +180,8 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
       </div>
 
       {/* Bottom toolbar - Search bar and action buttons */}
-      <div style={{
-        padding: '10px',
-        backgroundColor: '#f5f5f5',
-        borderTop: '1px solid #ddd',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        flexWrap: 'wrap'
-      }}>
-        <label htmlFor="quick-filter" style={{ fontWeight: 'bold', fontSize: '14px' }}>
+      <div className="data-grid-bottom-toolbar">
+        <label htmlFor="quick-filter" className="data-grid-search-label">
           Search:
         </label>
         <input
@@ -238,15 +190,7 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
           placeholder="Filter across all columns..."
           value={quickFilterText}
           onChange={onQuickFilterChanged}
-          style={{
-            flex: 1,
-            minWidth: '200px',
-            padding: '8px 12px',
-            fontSize: '14px',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            outline: 'none'
-          }}
+          className="data-grid-search-input"
         />
       </div>
     </div>
