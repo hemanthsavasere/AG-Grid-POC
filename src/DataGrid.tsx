@@ -17,6 +17,36 @@ interface DataGridProps {
 
 const MAX_ROWS = 25000;
 
+// Helper function to detect the data type of a column
+const detectColumnType = (data: any[], field: string): 'number' | 'boolean' | 'date' | 'text' => {
+  // Sample multiple rows to determine type (check up to 10 rows for better accuracy)
+  const sampleSize = Math.min(10, data.length);
+  const samples = data.slice(0, sampleSize).map(row => row[field]).filter(val => val != null);
+
+  if (samples.length === 0) return 'text';
+
+  // Check if all samples are numbers
+  const allNumbers = samples.every(val => typeof val === 'number' && !isNaN(val));
+  if (allNumbers) return 'number';
+
+  // Check if all samples are booleans
+  const allBooleans = samples.every(val => typeof val === 'boolean');
+  if (allBooleans) return 'boolean';
+
+  // Check if all samples are valid dates
+  const allDates = samples.every(val => {
+    if (val instanceof Date) return !isNaN(val.getTime());
+    if (typeof val === 'string') {
+      const date = new Date(val);
+      return !isNaN(date.getTime());
+    }
+    return false;
+  });
+  if (allDates) return 'date';
+
+  return 'text';
+};
+
 const DataGrid: React.FC<DataGridProps> = ({ data }) => {
   const gridRef = useRef<AgGridReact>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -35,62 +65,68 @@ const DataGrid: React.FC<DataGridProps> = ({ data }) => {
     return data;
   }, [data]);
 
-  // Column definitions with row grouping and aggregation support on ALL columns
+  // Column definitions with dynamic type detection and appropriate configurations
   const columnDefs = useMemo<ColDef[]>(() => {
     if (data.length === 0) return [];
 
     // Dynamically create column definitions from the first row
     const firstRow = data[0];
     return Object.keys(firstRow).map(key => {
+      const columnType = detectColumnType(data, key);
+
       const baseColDef: ColDef = {
         field: key,
-        headerName: key.charAt(0).toUpperCase() + key.slice(1),
+        headerName: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim(),
         sortable: true,
         floatingFilter: true,
         resizable: true,
-        enableRowGroup: true, // Enable grouping on ALL columns
+        enableRowGroup: true,
+        enableValue: true,
       };
 
-      // Configure salary column with aggregation and currency formatting
-      if (key === 'salary') {
-        return {
-          ...baseColDef,
-          enableValue: true,
-          aggFunc: 'avg',
-          filter: 'agNumberColumnFilter',
-          valueFormatter: (params: any) => {
-            if (params.value == null) return '';
-            return '$' + params.value.toLocaleString('en-US', {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0
-            });
-          },
-        };
-      }
+      // Configure based on detected type
+      switch (columnType) {
+        case 'number':
+          return {
+            ...baseColDef,
+            filter: 'agNumberColumnFilter',
+            aggFunc: 'sum', // Default aggregation for numbers
+            valueFormatter: (params: any) => {
+              if (params.value == null) return '';
+              return params.value.toLocaleString('en-US', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+              });
+            },
+          };
 
-      // Configure ID column with count aggregation
-      if (key === 'id') {
-        return {
-          ...baseColDef,
-          enableValue: true,
-          aggFunc: 'count',
-          filter: 'agNumberColumnFilter',
-        };
-      }
+        case 'boolean':
+          return {
+            ...baseColDef,
+            filter: 'agSetColumnFilter',
+            valueFormatter: (params: any) => {
+              if (params.value == null) return '';
+              return params.value ? 'Yes' : 'No';
+            },
+          };
 
-      // Use number filter for numeric columns
-      if (key === 'id' || key === 'salary') {
-        return {
-          ...baseColDef,
-          filter: 'agNumberColumnFilter',
-        };
-      }
+        case 'date':
+          return {
+            ...baseColDef,
+            filter: 'agDateColumnFilter',
+            valueFormatter: (params: any) => {
+              if (params.value == null) return '';
+              const date = params.value instanceof Date ? params.value : new Date(params.value);
+              return date.toLocaleDateString('en-US');
+            },
+          };
 
-      // Default configuration with text filter
-      return {
-        ...baseColDef,
-        filter: 'agTextColumnFilter',
-      };
+        default: // 'text'
+          return {
+            ...baseColDef,
+            filter: 'agTextColumnFilter',
+          };
+      }
     });
   }, [data]);
 
